@@ -194,8 +194,8 @@ public:
 // n-Queen with Genetic Algorithm
 int main()
 {
-    int size = 8;
-    int populationSize = 250;
+    int size = 100;
+    int populationSize = 2500;
     int tournamentSize = 1000;
     int mutationRate = 10;
     int generations = 1000;

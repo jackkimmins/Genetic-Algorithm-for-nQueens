@@ -3,7 +3,7 @@
 #include <time.h>
 
 // Size of board and number of queens
-const int nQSize = 8;
+const int nQSize = 100;
 
 // Maximum number of generations
 const int maxIteration = 500000;

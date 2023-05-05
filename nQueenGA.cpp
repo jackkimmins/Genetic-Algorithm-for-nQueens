@@ -1,212 +1,150 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <thread>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdbool.h>
 
-class Board
-{
-private:
-    int _size;
-    std::vector<int> _board;
-public:
-    // Constructor
-    Board(std::vector<int> board, int &size)
-    {
-        _board = board;
-        _size = size;
-    }
+#define nQSize 100
+#define maxIteration 500000
+#define parentCount 200
 
-    // Getter for board
-    std::vector<int> &GetBoard()
-    {
-        return _board;
-    }
+static inline void InitialiseParents(int parents[][nQSize]);
+static inline int CalculateFitness(const int parents[]);
+static inline void PerformMutation(int array[]);
+static inline int TournamentSelection(const int fitnessArray[]);
+static inline void ParentSelection(int parents[][nQSize], int child[][nQSize], int fitnessArray[], const int childrenFitness[]);
+static inline void NextGeneration(int parents[][nQSize], int fitnessArray[]);
+static inline void PrintBoard(const int parents[][nQSize], const int fitnessArray[]);
+static inline bool CheckForSolution(const int fitnessArray[]);
 
-    // Calculate the number of conflicts with other queens.
-    int Fitness()
-    {
-        int conflicts = 0;
-        for (int i = 0; i < _size; i++)
-        {
-            for (int j = i + 1; j < _size; j++)
-            {
-                if (_board[i] == _board[j]) conflicts++;
-                else if (abs(_board[i] - _board[j]) == abs(i - j)) conflicts++;
-            }
-        }
-        return conflicts;
-    }
-
-    // Generate a random ordering of size numbers.
-    static Board RandomChromosome(int &size)
-    {
-        std::vector<int> board;
-        for (int i = 0; i < size; i++) board.push_back(i);
-        for (int i = 0; i < size; i++)
-        {
-            int j = rand() % size;
-            int temp = board[i];
-            board[i] = board[j];
-            board[j] = temp;
-        }
-        return Board(board, size);
-    }
-
-    // Select a parent using tournament selection.
-    static Board TournamentSelection(std::vector<Board> &population, int &tournamentSize)
-    {
-        std::vector<Board> tournament;
-        for (int i = 0; i < tournamentSize; i++) tournament.push_back(population[rand() % population.size()]);
-        std::sort(tournament.begin(), tournament.end(), [](Board &a, Board &b) { return a.Fitness() < b.Fitness(); });
-        return tournament[0];
-    }
-
-    // Perform multi-point crossover to create a new chromosome from two existing ones.
-    Board MultiPointCrossover(Board &board, int &n)
-    {
-        std::vector<int> newBoard;
-        int i = rand() % n;
-        int j = rand() % n;
-        int start = std::min(i, j);
-        int end = std::max(i, j);
-
-        for (int k = 0; k < n; k++)
-        {
-            if (k >= start && k <= end) newBoard.push_back(_board[k]);
-            else newBoard.push_back(board._board[k]);
-        }
-        
-        return Board(newBoard, _size);
-    }
-
-    // Perform adaptive mutation on the chromosome.
-    void AdaptiveMutation(int &mutationRate)
-    {
-        for (int i = 0; i < _size; i++)
-        {
-            if (rand() % 100 < mutationRate)
-            {
-                int j = rand() % _size;
-                int temp = _board[i];
-                _board[i] = _board[j];
-                _board[j] = temp;
-            }
-        }
-    }
-};
-
-class GeneticAlgorithm
-{
-private:
-    int _size;
-    int _populationSize;
-    int _tournamentSize;
-    int _mutationRate;
-    int _generations;
-    int _genCount = 0;
-    std::vector<Board> _population;
-public:
-    // Constructor
-    GeneticAlgorithm(int &size, int &populationSize, int &tournamentSize, int &mutationRate, int &generations)
-    {
-        _size = size;
-        _populationSize = populationSize;
-        _tournamentSize = tournamentSize;
-        _mutationRate = mutationRate;
-        _generations = generations;
-    }
-
-    // Generate new offspring by crossover and mutation.
-    void GenerateOffspring(std::vector<Board> &parents)
-    {
-        std::vector<Board> offspring;
-        while (offspring.size() < _populationSize)
-        {
-            Board parent1 = Board::TournamentSelection(parents, _tournamentSize);
-            Board parent2 = Board::TournamentSelection(parents, _tournamentSize);
-            Board child = parent1.MultiPointCrossover(parent2, _size);
-            child.AdaptiveMutation(_mutationRate);
-            offspring.push_back(child);
-        }
-        _population = offspring;
-    }
-
-    // Using multi-threading, call the generate offspring function.
-    void GenerateOffspringThread(std::vector<Board> &parents)
-    {
-        const int numThreads = 8;
-
-        std::vector<std::thread> threads;
-        for (int i = 0; i < numThreads; i++) threads.push_back(std::thread(&GeneticAlgorithm::GenerateOffspring, this, std::ref(parents)));
-        for (int i = 0; i < numThreads; i++) threads[i].join();
-    }
-
-    // Evaluate the fitness of each board in the population.
-    void EvaluateFitness()
-    {
-        std::sort(_population.begin(), _population.end(), [](Board &a, Board &b) { return a.Fitness() < b.Fitness(); });
-    }
-
-    // Use a genetic algorithm to find a solution to the n-queens problem.
-    double Solve()
-    {
-        clock_t start = clock();
-
-        // Initialize the population.
-        for (int i = 0; i < _populationSize; i++)
-        {
-            _population.push_back(Board::RandomChromosome(_size));
-        }
-
-        // Iterate through the generations.
-        for (int i = 0; i < _generations; i++)
-        {
-            // Evaluate the fitness of each board in the population.
-            EvaluateFitness();
-
-            // Check if a solution has been found.
-            if (_population[0].Fitness() == 0) break;
-
-            // Generate new offspring by crossover and mutation.
-            GenerateOffspringThread(_population);
-            _genCount++;
-        }
-
-        return (clock() - start) / (double)CLOCKS_PER_SEC;
-    }
-
-    // Print the board to the console.
-    void PrintSolution()
-    {
-        std::cout << "Solution found in " << _genCount << " generations:" << std::endl;
-        for (int i = 0; i < _size; i++)
-        {
-            for (int j = 0; j < _size; j++)
-            {
-                if (_population[0].GetBoard()[i] == j) std::cout << "Q ";
-                else std::cout << "• ";
-            }
-            std::cout << std::endl;
-        }
-    }
-};
-
-// n-Queen with Genetic Algorithm
 int main()
 {
-    int size = 100;
-    int populationSize = 2500;
-    int tournamentSize = 1000;
-    int mutationRate = 10;
-    int generations = 1000;
+    int iteration = 0, parents[parentCount][nQSize], fitnessArray[parentCount];
 
-    GeneticAlgorithm geneticAlgorithm = GeneticAlgorithm(size, populationSize, tournamentSize, mutationRate, generations);
+    InitialiseParents(parents);
+    for (int i = 0; i < parentCount; i++) fitnessArray[i] = CalculateFitness(parents[i]);
 
-    double timeTaken = geneticAlgorithm.Solve();
+    clock_t start = clock();
+    while (iteration < maxIteration && !CheckForSolution(fitnessArray))
+    {
+        NextGeneration(parents, fitnessArray);
+        iteration++;
+    }
 
-    std::cout << "Operation completed in " << timeTaken << " seconds." << std::endl;
+    clock_t end = clock();
+    double time = (double)(end - start) / CLOCKS_PER_SEC;
 
-    geneticAlgorithm.PrintSolution();
+    printf("Time taken: %f seconds.\n", time);
+    printf("Number of Iterations: %d\n", iteration);
 
+    PrintBoard(parents, fitnessArray);
     return 0;
+}
+
+static inline void InitialiseParents(int parents[][nQSize])
+{
+    srand(time(NULL));
+    int numberSet[nQSize];
+    for (int i = 0; i < nQSize; i++) numberSet[i] = i;
+
+    for (int l = 0; l < parentCount; l++)
+    {
+        for (int i = 0; i < nQSize; i++)
+        {
+            int j = rand() % nQSize;
+            int temp = numberSet[i];
+            numberSet[i] = numberSet[j];
+            numberSet[j] = temp;
+        }
+
+        for (int i = 0; i < nQSize; i++) parents[l][i] = numberSet[i];
+    }
+}
+
+static inline int CalculateFitness(const int parents[])
+{
+    int fitness = 0;
+    for (int i = 0; i < nQSize; i++)
+        for (int j = i + 1; j < nQSize; j++)
+            if (parents[i] == parents[j] || abs(parents[i] - parents[j]) == abs(i - j)) fitness++;
+    return fitness;
+}
+
+static inline void PerformMutation(int array[])
+{
+    int randomIndex1 = rand() % nQSize, randomIndex2 = rand() % nQSize;
+    int temp = array[randomIndex1];
+    array[randomIndex1] = array[randomIndex2];
+    array[randomIndex2] = temp;
+}
+
+static inline int TournamentSelection(const int fitnessArray[])
+{
+    int firstIndex = rand() % parentCount, secondIndex = rand() % parentCount;
+    return fitnessArray[firstIndex] < fitnessArray[secondIndex] ? firstIndex : secondIndex;
+}
+
+static inline void ParentSelection(int parents[][nQSize], int child[][nQSize], int fitnessArray[], const int childrenFitness[])
+{
+    for (int i = 0; i < parentCount; i++)
+    {
+        if (fitnessArray[i] < 3 || childrenFitness[i] < 3)
+        {
+            if (childrenFitness[i] < fitnessArray[i])
+            {
+                fitnessArray[i] = childrenFitness[i];
+                for (int j = 0; j < nQSize; j++) parents[i][j] = child[i][j];
+            }
+        }
+        else
+        {
+            int parentIndex = rand() % 2;
+            if (parentIndex == 1 && childrenFitness[i] < fitnessArray[i])
+            {
+                fitnessArray[i] = childrenFitness[i];
+                for (int j = 0; j < nQSize; j++) parents[i][j] = child[i][j];
+            }
+        }
+    }
+}
+
+static inline void NextGeneration(int parents[][nQSize], int fitnessArray[])
+{
+    int child[parentCount][nQSize];
+    int childrenFitness[parentCount];
+    int firstParentIndex, secondParentIndex;
+
+    for (int i = 0; i < parentCount; i++)
+    {
+        firstParentIndex = TournamentSelection(fitnessArray);
+        secondParentIndex = TournamentSelection(fitnessArray);
+
+        for (int j = 0; j < nQSize; j++) child[i][j] = parents[firstParentIndex][j];
+
+        PerformMutation(child[i]);
+        childrenFitness[i] = CalculateFitness(child[i]);
+    }
+
+    ParentSelection(parents, child, fitnessArray, childrenFitness);
+
+}
+
+static inline void PrintBoard(const int parents[][nQSize], const int fitnessArray[])
+{
+    int index = 0, min = fitnessArray[0];
+    for (int i = 1; i < parentCount; i++)
+        if (fitnessArray[i] < min) {
+            min = fitnessArray[i];
+            index = i;
+        }
+
+    for (int i = 0; i < nQSize; i++) {
+        for (int j = 0; j < nQSize; j++) printf(parents[index][i] == j ? "Q " : "• ");
+        printf("\n");
+    }
+}
+
+static inline bool CheckForSolution(const int fitnessArray[])
+{
+    for (int i = 0; i < parentCount; i++) if (fitnessArray[i] == 0) return true;
+    return false;
 }

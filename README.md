@@ -17,7 +17,6 @@ I used C++ for my implementation because it is a fast and efficient programming 
  - **Adaptive Mutation**: A method of introducing small changes to candidate solutions by randomly altering
    their genetic information, with the rate of mutation being more
    likely to occur in less fit solutions.
- - **Multithreading**: A programming technique that allows a program to be executed concurrently on multiple CPU cores, in order to speed up the processing time.
 
 ### Example
 ![Example Image of Console Program](https://github.com/jackkimmins/NQueens/raw/master/Example.png)

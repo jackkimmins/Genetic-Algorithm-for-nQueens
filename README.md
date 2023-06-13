@@ -23,3 +23,13 @@ I used C++ for my implementation because it is a fast and efficient programming 
 ![Example Image of Console Program](https://github.com/jackkimmins/NQueens/raw/master/Example.png)
 
 ~*n-Size of `8`, done with compiler optimisations enabled (`0.000117s` without - `0.000001s` with)*
+
+
+| `n` | `clock_t` | real | user |
+|--|--|--|--|
+| 8 | 0.000001s | 0.001s | 0.001s |
+| 16 | 0.000862s | 0.002s | 0.001s |
+| 32 | 0.011414s | 0.012s | 0.0012s |
+| 64 | 0.124400s | 0.126s | 0.126s |
+| 128 | 1.471171s | 1.475s | 1.475s |
+| 256 | 16.249298s | 16.262s | 16.26s |

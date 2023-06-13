@@ -21,4 +21,5 @@ I used C++ for my implementation because it is a fast and efficient programming 
 
 ### Example
 ![Example Image of Console Program](https://github.com/jackkimmins/NQueens/raw/master/Example.png)
+
 ~*n-Size of `8`, done with compiler optimisations enabled (`0.000117s` without - `0.000001s` with)*

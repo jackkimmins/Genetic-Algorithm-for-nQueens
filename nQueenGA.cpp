@@ -3,7 +3,7 @@
 #include <time.h>
 #include <stdbool.h>
 
-#define nQSize 100
+#define nQSize 8
 #define maxIteration 500000
 #define parentCount 200
 
@@ -18,6 +18,8 @@ static inline bool CheckForSolution(const int fitnessArray[]);
 
 int main()
 {
+    printf("Number of Queens: %d\n", nQSize);
+
     int iteration = 0, parents[parentCount][nQSize], fitnessArray[parentCount];
 
     InitialiseParents(parents);
